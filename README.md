@@ -7,16 +7,17 @@ A tool for scraping and analyzing Request for Proposal (RFP) documents.
 This project uses [uv](https://github.com/astral-sh/uv) for Python package management.
 
 ```bash
+# Ensure you have up installed
+which uv || pip intall uv
+
 # Create a virtual environment
 uv venv
 
 # Activate the virtual environment
 source .venv/bin/activate  # On Unix/macOS
-# or
-.venv\Scripts\activate     # On Windows
 
 # Install dependencies
-uv pip install -e .
+uv sync
 ```
 
 ## Usage
@@ -25,10 +26,8 @@ TBD
 
 ## Development
 
-```bash
-# Install development dependencies
-uv pip install -e ".[dev]"
-
 # Run tests
+
+```bash
 pytest
-``` 
+```
