@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      UV_LINK_MODE: copy
+      PYTHONBREAKPOINT: rfp_scraper.debug.enhanced_breakpoint.set_trace

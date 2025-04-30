@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rfp-scraper"
+version = "0.1.0"
+description = "RFP Scraper"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "clidantic>=0.1.0",
+    "httpx>=0.28.1",
+    "pydantic>=1.10.22",
+    "pyright>=1.1.400",
+]
+
+[dependency-groups]
+dev = [
+    "datamodel-code-generator>=0.30.0",
+    "flake8>=7.2.0",
+    "ipdb>=0.13.13",
+    "ipython>=9.2.0",
+    "nest-asyncio>=1.6.0",
+    "pytest>=8.3.5",
+    "rich>=14.0.0",
+    "ruff>=0.11.7",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint.per-file-ignores]
+"rfp_scraper/generated/*" = ["N815"]
+"rfp_scraper/services/scrape_sam_gov.py" = ["N815"]
+
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "I",   # isort
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "SIM", # flake8-simplify
+]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.isort]
+known-first-party = ["rfp_scraper"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+
+[tool.pyright]
+typeCheckingMode = "strict"
+useLibraryCodeForTypes = true
+reportMissingImports = true
+reportMissingTypeStubs = true
+reportUnknownMemberType = true
+reportUnknownArgumentType = true
+reportUnknownVariableType = true
+reportUnknownParameterType = true
+reportGeneralTypeIssues = true
+reportInvalidTypeVarUse = true
+reportCallInDefaultInitializer = true
+reportUnusedCallResult = true
+reportUntypedFunctionDecorator = true
+reportUnusedCoroutine = true
+reportUnnecessaryTypeIgnoreComment = true
+reportImportCycles = true
+reportPrivateUsage = true
+reportConstantRedefinition = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportOverlappingOverload = true
+reportInconsistentConstructor = true
+reportMissingTypeArgument = true
+reportUninitializedInstanceVariable = true
+reportInvalidStubStatement = true
+reportIncompleteStub = true
+reportUnsupportedDunderAll = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+enableTypeIgnoreComments = false
+reportMissingModuleSource = true
+reportOptionalMemberAccess = true
+reportOptionalSubscript = true
+reportOptionalCall = true
+reportOptionalIterable = true
+reportOptionalContextManager = true
+reportOptionalOperand = true
