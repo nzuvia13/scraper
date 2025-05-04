@@ -10,11 +10,15 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
-    "clidantic>=0.1.0",
     "httpx>=0.28.1",
     "pydantic>=1.10.22",
     "pyright>=1.1.400",
+    "structlog>=25.3.0",
+    "typer>=0.15.3",
 ]
+
+[project.scripts]
+rfp = "rfp_scraper.cli.__main__:app"
 
 [dependency-groups]
 dev = [
@@ -35,6 +39,9 @@ target-version = "py312"
 [tool.ruff.lint.per-file-ignores]
 "rfp_scraper/generated/*" = ["N815"]
 "rfp_scraper/services/scrape_sam_gov.py" = ["N815"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 
 [tool.ruff.lint]
