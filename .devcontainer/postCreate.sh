@@ -10,3 +10,7 @@ sudo chmod -R 777 /workspace/.venv
 uv venv || (sleep 1 && uv venv)
 uv run pip install --upgrade pip
 uv sync
+
+# Initialize pyright -- this is not ideal as its through side-effect. It needs to initialize
+# nodejs and we incur that at start time
+pyright --version
