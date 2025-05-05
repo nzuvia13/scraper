@@ -5,7 +5,12 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspace:cached
+      - venv:/workspace/.venv
+      - uv-cache:/home/vscode/.cache/uv
     command: sleep infinity
     environment:
       UV_LINK_MODE: copy
       PYTHONBREAKPOINT: rfp_scraper.debug.enhanced_breakpoint.set_trace
+volumes:
+  venv:
+  uv-cache:
