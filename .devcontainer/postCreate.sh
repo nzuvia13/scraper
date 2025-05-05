@@ -6,6 +6,7 @@ set -euo pipefail
 sudo chmod -R 777 /home/vscode/.cache
 sudo chmod -R 777 /workspace/.venv
 
-uv venv
+# Might be a small timing issue with the docker mount
+uv venv || (sleep 1 && uv venv)
 uv run pip install --upgrade pip
 uv sync

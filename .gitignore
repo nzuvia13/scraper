@@ -50,3 +50,6 @@ htmlcov/
 .mypy_cache/
 .cache/
 *.ignore.*
+
+# alembic / sql
+database.db

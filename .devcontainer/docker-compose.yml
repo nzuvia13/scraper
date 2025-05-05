@@ -11,6 +11,12 @@ services:
     environment:
       UV_LINK_MODE: copy
       PYTHONBREAKPOINT: rfp_scraper.debug.enhanced_breakpoint.set_trace
+  postgres:
+    image: postgres:17.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zbids
 volumes:
   venv:
   uv-cache:

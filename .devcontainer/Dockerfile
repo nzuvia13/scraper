@@ -7,10 +7,13 @@ ENV PATH="/workspace/.venv/bin:$PATH"
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
-    git \
+    build-essential \
     curl \
+    git \
+    pgcli \
+    postgresql-client \
     vim \
-    build-essential
+    && echo "Done"
 
 # Set up a non-root user
 ARG USERNAME=vscode

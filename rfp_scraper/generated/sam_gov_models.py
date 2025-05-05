@@ -106,14 +106,14 @@ class APIKeyUser(BaseModel):
 
 
 class EmailDetails(BaseModel):
-    field_links: list[Link] | None = Field(None, alias='_links')
+    field_links: list[Link] | None = Field(None, alias="_links")
     email: str | None = None
     firstName: str | None = None
     lastName: str | None = None
 
 
 class FilteredAPIKeyUserDetails(BaseModel):
-    field_links: list[Link] | None = Field(None, alias='_links')
+    field_links: list[Link] | None = Field(None, alias="_links")
     apiKey: str | None = None
     apiKeyExpiryDate: str | None = None
     limit: str | None = None
