@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from rfp_scraper import logging, secrets
+
+from . import output_directories
 
 
 @asynccontextmanager
@@ -186,3 +188,32 @@ async def run_scraping(start_date: datetime.datetime, end_date: datetime.datetim
 
         logger.info("SAM.gov search pagination complete", cnt_total_records=len(all_opportunities))
         return all_opportunities
+
+
+def write_scraping_outputs(
+    *, start_time: datetime.datetime, end_time: datetime.datetime, opportunities: list[SamGovOpportunity]
+) -> None:
+    """Write the scraping outputs to the SamGovScrapes output directory."""
+    logger = logging.build_logger(name=f"{__name__}.{write_scraping_outputs.__name__}")
+    logger.info("Writing scraping outputs", cnt_opportunities=len(opportunities))
+    adapter = TypeAdapter(list[SamGovOpportunity])
+    opportunities_json_contents = adapter.dump_json(opportunities).decode("utf-8")
+    if not output_directories.SAM_GOV_SCRAPES_DIR.exists():
+        output_directories.SAM_GOV_SCRAPES_DIR.mkdir(parents=True, exist_ok=True)
+
+    start_time_formatted = start_time.strftime(format="%Y-%m-%d")
+    start_time_unix = int(start_time.timestamp())
+    end_time_unix = int(end_time.timestamp())
+    filename = f"{start_time_formatted}__{start_time_unix}__{end_time_unix}.json"
+    output_file_path = output_directories.SAM_GOV_SCRAPES_DIR / filename
+
+    with open(output_file_path, mode="w") as f:
+        f.write(opportunities_json_contents)  # pyright: ignore[reportUnusedCallResult]
+
+    logger.info(
+        "Scraping outputs written",
+        output_file_path=output_file_path,
+        start_time_formatted=start_time_formatted,
+        start_time_unix=start_time_unix,
+        end_time_unix=end_time_unix,
+    )
