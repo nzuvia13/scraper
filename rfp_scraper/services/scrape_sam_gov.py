@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, PositiveInt, TypeAdapter, ValidationError
 
 from rfp_scraper import logging, secrets
 
@@ -12,7 +12,7 @@ from . import output_directories
 
 
 @asynccontextmanager
-async def _build_authenticated_client() -> AsyncGenerator[httpx.AsyncClient, None]:
+async def _build_authenticated_client(base_url: str) -> AsyncGenerator[httpx.AsyncClient, None]:
     """Create an authenticated HTTP client for SAM.gov API with default query parameters."""
     params = {
         "api_key": secrets.SAM_GOV_API_KEY,
@@ -20,7 +20,7 @@ async def _build_authenticated_client() -> AsyncGenerator[httpx.AsyncClient, Non
 
     # Create client with base URL and default params
     client = httpx.AsyncClient(
-        base_url="https://api.sam.gov/opportunities",
+        base_url=base_url,
         params=params,
     )
 
@@ -123,6 +123,25 @@ class SamGovSearchResponse(BaseModel):
     links: list[Link]
 
 
+SamGovOpportunityListAdapter = TypeAdapter(list[SamGovOpportunity])
+
+
+class RateLimitDetails(BaseModel):
+    limit: PositiveInt | None
+    remaining: PositiveInt | None
+
+
+def _extract_rate_limit_details(response_headers: httpx.Headers) -> RateLimitDetails:
+    """Extract the rate limit details from the response headers."""
+    rate_limit_limit: str | None = response_headers.get("X-RateLimit-Limit", None)
+    rate_limit_remaining: str | None = response_headers.get("X-RateLimit-Remaining", None)
+
+    return RateLimitDetails(
+        limit=int(rate_limit_limit) if rate_limit_limit else None,
+        remaining=int(rate_limit_remaining) if rate_limit_remaining else None,
+    )
+
+
 async def run_scraping(start_date: datetime.datetime, end_date: datetime.datetime) -> list[SamGovOpportunity]:
     """Fetch opportunities data from SAM.gov API.
 
@@ -135,7 +154,9 @@ async def run_scraping(start_date: datetime.datetime, end_date: datetime.datetim
     """
     logger = logging.build_logger(name=f"{__name__}.{run_scraping.__name__}")
     logger.info("Starting to scrape SAM.gov opportunities", start_date=start_date, end_date=end_date)
-    async with _build_authenticated_client() as client:
+    async with _build_authenticated_client(
+        base_url="https://api.sam.gov/opportunities",
+    ) as client:
         all_opportunities: list[SamGovOpportunity] = []
         api_max_limit = 1000
         search_params = {
@@ -143,13 +164,21 @@ async def run_scraping(start_date: datetime.datetime, end_date: datetime.datetim
             "postedFrom": start_date.strftime(format="%m/%d/%Y"),
             "postedTo": end_date.strftime(format="%m/%d/%Y"),
         }
-        # breakpoint()
-        response = await client.get(url="/v2/search", params=search_params)
 
-        logger.info("SAM.gov search response", status=response.status_code)
+        response = await client.get(url="/v2/search", params=search_params)
+        rate_limit_details = _extract_rate_limit_details(response.headers)
+        logger.info("SAM.gov search response", status=response.status_code, rate_limit_details=rate_limit_details)
 
         if not response.is_success:
-            raise Exception(f"Failed to scrape SAM.gov: {response.status_code} {response.text}")
+            if response.status_code == 429:
+                logger.warning(
+                    "SamGov Rate limit exceeded",
+                    status=response.status_code,
+                    response_text=response.text,
+                )
+                response.raise_for_status()  # pyright: ignore[reportUnusedCallResult]
+            else:
+                raise Exception(f"Failed to scrape SAM.gov: {response.status_code} {response.text}")
 
         initial_response_json = response.json()
         try:
@@ -183,11 +212,54 @@ async def run_scraping(start_date: datetime.datetime, end_date: datetime.datetim
                     "offset": str(next_page_offset),
                 },
             )
+            rate_limit_details_pagination = _extract_rate_limit_details(response.headers)
+            logger.info(
+                "SAM.gov search pagination response",
+                status=response.status_code,
+                rate_limit_details=rate_limit_details_pagination,
+            )
             next_page_response_data = SamGovSearchResponse.model_validate(response.json())
             all_opportunities.extend(next_page_response_data.opportunitiesData)
 
         logger.info("SAM.gov search pagination complete", cnt_total_records=len(all_opportunities))
         return all_opportunities
+
+
+OpportunityDescription = dict[str, Any]
+
+
+async def fetch_sam_gov_opportunity_descriptions(
+    opportunities: list[SamGovOpportunity],
+) -> list[OpportunityDescription]:
+    logger = logging.build_logger(name=f"{__name__}.{fetch_sam_gov_opportunity_descriptions.__name__}")
+    logger.info("Starting to convert SamGov opportunities to descriptions", cnt_opportunities=len(opportunities))
+    all_descriptions: list[OpportunityDescription] = []
+
+    async with _build_authenticated_client(base_url="") as client:
+        for opportunity in opportunities:
+            response = await client.get(opportunity.description)
+            if not response.is_success:
+                rate_limit_details = _extract_rate_limit_details(response.headers)
+                if response.status_code == 429:
+                    logger.warning(
+                        "SamGov Rate limit exceeded",
+                        opportunity_id=opportunity.noticeId,
+                        status=response.status_code,
+                        response_text=response.text,
+                        rate_limit_details=rate_limit_details,
+                    )
+                    response.raise_for_status()  # pyright: ignore[reportUnusedCallResult]
+                else:
+                    logger.error(
+                        "Failed to fetch SamGov opportunity description",
+                        opportunity_id=opportunity.noticeId,
+                        status=response.status_code,
+                        response_text=response.text,
+                        rate_limit_details=rate_limit_details,
+                    )
+                    continue
+            all_descriptions.append(response.json())
+        return all_descriptions
 
 
 def write_scraping_outputs(
@@ -196,8 +268,8 @@ def write_scraping_outputs(
     """Write the scraping outputs to the SamGovScrapes output directory."""
     logger = logging.build_logger(name=f"{__name__}.{write_scraping_outputs.__name__}")
     logger.info("Writing scraping outputs", cnt_opportunities=len(opportunities))
-    adapter = TypeAdapter(list[SamGovOpportunity])
-    opportunities_json_contents = adapter.dump_json(opportunities).decode("utf-8")
+
+    opportunities_json_contents = SamGovOpportunityListAdapter.dump_json(opportunities).decode("utf-8")
     if not output_directories.SAM_GOV_SCRAPES_DIR.exists():
         output_directories.SAM_GOV_SCRAPES_DIR.mkdir(parents=True, exist_ok=True)
 
