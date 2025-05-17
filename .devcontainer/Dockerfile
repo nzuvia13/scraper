@@ -31,5 +31,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # Install uv
 RUN pip install uv && uv venv
 
+RUN pre-commit install --install-hooks
+
 # Set the working directory
 WORKDIR /workspace
