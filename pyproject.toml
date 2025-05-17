@@ -33,6 +33,7 @@ dev = [
     "ipython>=9.2.0",
     "jupyterlab>=4.4.2",
     "nest-asyncio>=1.6.0",
+    "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "pytest-alembic>=0.11.1",
     "rich>=14.0.0",
@@ -42,6 +43,7 @@ dev = [
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["notebooks/*", "output/*"]
 
 [tool.ruff.lint.per-file-ignores]
 "rfp_scraper/generated/*" = ["N815"]

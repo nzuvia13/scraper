@@ -18,5 +18,3 @@ uv run datamodel-codegen  \
     --use-standard-collections \
     --enum-field-as-literal=all \
     --formatters=ruff-check
-
-

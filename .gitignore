@@ -45,7 +45,7 @@ htmlcov/
 # DevContainer
 .devcontainer/devcontainer.env
 
-# Other tools 
+# Other tools
 .ruff_cache/
 .mypy_cache/
 .cache/

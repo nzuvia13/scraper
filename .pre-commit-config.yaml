@@ -1,0 +1,38 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          - id: check-yaml
+          - id: check-added-large-files
+          - id: check-docstring-first
+          - id: check-merge-conflict
+          - id: check-case-conflict
+          - id: check-json
+            exclude: (.devcontainer)
+          - id: check-toml
+          - id: debug-statements
+          - id: detect-private-key
+          - id: end-of-file-fixer
+            exclude: (^output)
+          - id: no-commit-to-branch
+            args: [--branch=main]
+          - id: trailing-whitespace
+            exclude: (^output)
+
+    - repo: local
+      hooks:
+          - id: format
+            name: Format Code
+            entry: uv run ruff format
+            language: system
+            types: [python]
+            pass_filenames: false
+
+          - id: typecheck
+            name: Type Check
+            entry: uv run pyright .
+            language: system
+            types: [python]
+            pass_filenames: false

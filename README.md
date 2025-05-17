@@ -16,7 +16,7 @@ uv venv
 # Activate the virtual environment
 source .venv/bin/activate  # On Unix/macOS
 
-# Install dependencies 
+# Install dependencies
 # NB: <-- if you ever appear to have missing dependencies this is the command you likely want
 uv sync
 ```
